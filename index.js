@@ -2,13 +2,16 @@ const { S3Client, ListObjectsV2Command, GetObjectCommand, PutObjectCommand } = r
 const sharp = require('sharp');
 
 const s3Client = new S3Client({
-	region: process.env.AWS_S3_REGION, credentials: {
+	region: process.env.AWS_S3_REGION,
+	credentials: {
 		accessKeyId: process.env.AWS_ACCESS_KEY_ID,
 		secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
 	},
 });
+
 const BUCKET = process.env.AWS_BUCKET_NAME;
-const SLEEP_INTERVAL = 50;
+const BATCH_SIZE = process.env.BATCH_SIZE || 20;
+const SLEEP_INTERVAL = 100;
 
 function sleep(ms) {
 	return new Promise(resolve => setTimeout(resolve, ms));
@@ -29,14 +32,11 @@ async function generateMissingJpgFiles() {
 
 		// Filter and group files by base name
 		const fileGroups = Contents.reduce((acc, { Key }) => {
-			// Only process .webp files
 			if (!Key.endsWith('.webp')) return acc;
 
-			// Get base name (remove .webp extension)
 			const baseName = Key.slice(0, -5);
 			const jpgKey = `${baseName}.jpg`;
 
-			// Check if we already have this file group
 			if (!acc[baseName]) {
 				acc[baseName] = {
 					webpKey: Key,
@@ -58,43 +58,53 @@ async function generateMissingJpgFiles() {
 			}
 		});
 
-		const needJPGFiles = Object.values(fileGroups).filter(({ webpKey, jpgKey, hasJpg }) => (hasJpg == false));
+		const needJPGFiles = Object.values(fileGroups).filter(({ hasJpg }) => !hasJpg);
 
-		console.log(`Only ${needJPGFiles.length} files need JPG versions`);
+		console.log(`${needJPGFiles.length} files need JPG versions`);
 
-		// Process files that don't have JPG versions
-		let count = 0;
-		for (const { webpKey, jpgKey, hasJpg } of Object.values(needJPGFiles)) {
+		// Process files in batches with parallel processing within each batch
+		for (let i = 0; i < needJPGFiles.length; i += BATCH_SIZE) {
+			const batch = needJPGFiles.slice(i, i + BATCH_SIZE);
 
-			console.log(`${++count}. Generating JPG for ${webpKey}`);
+			console.log(`Processing batch ${Math.floor(i / BATCH_SIZE) + 1}`);
 
-			// Get the webp file
-			const getCommand = new GetObjectCommand({
-				Bucket: BUCKET,
-				Key: webpKey
-			});
+			// Process batch sequentially but with parallel file conversion
+			await Promise.all(batch.map(async ({ webpKey, jpgKey }) => {
+				try {
+					console.log(`Generating JPG for ${webpKey}`);
 
-			const { Body } = await s3Client.send(getCommand);
-			const buffer = await streamToBuffer(Body);
+					// Get the webp file
+					const getCommand = new GetObjectCommand({
+						Bucket: BUCKET,
+						Key: webpKey
+					});
 
-			// Convert to JPG
-			const jpgBuffer = await sharp(buffer)
-				.jpeg()
-				.toBuffer();
+					const { Body } = await s3Client.send(getCommand);
+					const buffer = await streamToBuffer(Body);
 
-			// Upload JPG version
-			const putCommand = new PutObjectCommand({
-				Bucket: BUCKET,
-				Key: jpgKey,
-				Body: jpgBuffer,
-				ContentType: 'image/jpeg',
-				ACL: 'public-read'
-			});
+					// Convert to JPG
+					const jpgBuffer = await sharp(buffer)
+						.jpeg()
+						.toBuffer();
 
-			await s3Client.send(putCommand);
+					// Upload JPG version
+					const putCommand = new PutObjectCommand({
+						Bucket: BUCKET,
+						Key: jpgKey,
+						Body: jpgBuffer,
+						ContentType: 'image/jpeg',
+						ACL: 'public-read'
+					});
 
-			console.log(`Generated JPG: ${jpgKey}\n`);
+					await s3Client.send(putCommand);
 
+					console.log(`Generated JPG: ${jpgKey}\n`);
+				} catch (error) {
+					console.error(`Error processing ${webpKey}:`, error);
+				}
+			}));
+
+			// Optional: Add a small delay between batches to prevent overwhelming the system
 			await sleep(SLEEP_INTERVAL);
 		}
 
