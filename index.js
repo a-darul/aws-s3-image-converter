@@ -8,7 +8,7 @@ const s3Client = new S3Client({
 	},
 });
 const BUCKET = process.env.AWS_BUCKET_NAME;
-const SLEEP_INTERVAL = 100;
+const SLEEP_INTERVAL = 50;
 
 function sleep(ms) {
 	return new Promise(resolve => setTimeout(resolve, ms));
@@ -63,9 +63,10 @@ async function generateMissingJpgFiles() {
 		console.log(`Only ${needJPGFiles.length} files need JPG versions`);
 
 		// Process files that don't have JPG versions
-		for (const { webpKey, jpgKey, hasJpg } of Object.values(fileGroups)) {
+		let count = 0;
+		for (const { webpKey, jpgKey, hasJpg } of Object.values(needJPGFiles)) {
 
-			console.log(`Generating JPG for ${webpKey}`);
+			console.log(`${++count}. Generating JPG for ${webpKey}`);
 
 			// Get the webp file
 			const getCommand = new GetObjectCommand({
