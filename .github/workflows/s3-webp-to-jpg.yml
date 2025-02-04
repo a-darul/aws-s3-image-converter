@@ -27,8 +27,12 @@ jobs:
     - name: Install dependencies
       run: npm install
 
-    - name: Load NextContinuationToken into ENV (if exists)
-      run: echo "NEXT_CONTINUATION_TOKEN=$(cat .next_token 2>/dev/null || echo '')" >> $GITHUB_ENV
+    - name: Load NextContinuationToken into ENV (with fallback)
+      run: |
+        echo "NEXT_CONTINUATION_TOKEN=${{ secrets.NEXT_CONTINUATION_TOKEN }}" >> $GITHUB_ENV
+        if [ -z "${{ secrets.NEXT_CONTINUATION_TOKEN }}" ]; then
+          echo "NEXT_CONTINUATION_TOKEN=$(cat .next_token 2>/dev/null || echo '')" >> $GITHUB_ENV
+        fi
 
     # Run the conversion script
     - name: Run WebP to JPG conversion script
