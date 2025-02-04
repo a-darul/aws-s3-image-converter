@@ -1,2 +1,11 @@
 # aws-s3-image-converter
-Automatically generate missing image formats in AWS S3 buckets. This Node.js tool efficiently converts and manages multiple image formats (WebP, JPEG) by detecting existing files and only processing what's needed. Features include parallel processing, intelligent file detection, and AWS S3 integration using @aws-sdk/client-s3
+🚀 Automatically convert WebP to JPG in AWS S3 using Node.js & Sharp
+This repository provides a Node.js-based solution to check and convert WebP images to JPG inside an AWS S3 bucket. It ensures that no duplicate .jpg files are created, optimizing storage and processing.
+
+## Features:
+- 🚀 Automatic detection and generation of missing image formats
+- 🔄 Smart processing - only converts missing formats
+- ⚡ Parallel processing support
+- 📦 Built-in AWS S3 integration
+- 🛠️ Easy configuration and customization
+- 🎯 Memory-efficient streaming support
