@@ -1,0 +1,33 @@
+{
+  "name": "aws-s3-image-converter",
+  "version": "1.0.0",
+  "description": "Automatically convert WebP to JPG in AWS S3 using Node.js & Sharp",
+  "main": "index.js",
+  "scripts": {
+    "start": "node -r dotenv/config index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/a-darul/aws-s3-image-converter.git"
+  },
+  "keywords": [
+    "aws-s3",
+    "image-processing",
+    "sharp.js",
+    "webp",
+    "to",
+    "jpg"
+  ],
+  "author": "a-darul",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/a-darul/aws-s3-image-converter/issues"
+  },
+  "homepage": "https://github.com/a-darul/aws-s3-image-converter#readme",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.741.0",
+    "dotenv": "^16.4.7",
+    "sharp": "^0.33.5"
+  }
+}
