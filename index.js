@@ -19,8 +19,9 @@ async function generateMissingJpgFiles() {
 		// List all objects in the spots directory
 		const listCommand = new ListObjectsV2Command({
 			Bucket: BUCKET,
-			Prefix: "spots/manual-"
-			// ContinuationToken: 'NextContinuationToken'
+			Prefix: "spots/manual-",
+			MaxKeys: 5,
+			...(process.env.NEXT_CONTINUATION_TOKEN && { ContinuationToken: process.env.NEXT_CONTINUATION_TOKEN }),
 		});
 
 		const { Contents = [], IsTruncated, NextContinuationToken } = await s3Client.send(listCommand);
