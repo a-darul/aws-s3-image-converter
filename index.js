@@ -20,13 +20,10 @@ async function generateMissingJpgFiles() {
 		const listCommand = new ListObjectsV2Command({
 			Bucket: BUCKET,
 			Prefix: "spots/manual-"
+			// ContinuationToken: 'NextContinuationToken'
 		});
 
 		const { Contents = [], IsTruncated, NextContinuationToken } = await s3Client.send(listCommand);
-		if (IsTruncated) {
-			console.warn('Warning: S3 list is truncated. Some files may be missing.');
-			console.warn('NextContinuationToken:', NextContinuationToken);
-		}
 
 		console.log(`Found ${Contents.length} files`);
 
@@ -99,6 +96,12 @@ async function generateMissingJpgFiles() {
 
 			await sleep(SLEEP_INTERVAL);
 		}
+
+		if (IsTruncated) {
+			console.warn('Warning: S3 list is truncated. Some files may be missing.');
+			console.warn('NextContinuationToken:', NextContinuationToken);
+		}
+
 	} catch (error) {
 		console.error('Error processing files:', error);
 		throw error;
