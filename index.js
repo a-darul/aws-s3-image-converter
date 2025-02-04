@@ -20,7 +20,6 @@ async function generateMissingJpgFiles() {
 		const listCommand = new ListObjectsV2Command({
 			Bucket: BUCKET,
 			Prefix: "spots/manual-",
-			MaxKeys: 5,
 			...(process.env.NEXT_CONTINUATION_TOKEN && { ContinuationToken: process.env.NEXT_CONTINUATION_TOKEN }),
 		});
 
