@@ -26,6 +26,8 @@ async function generateMissingJpgFiles() {
 			...(process.env.NEXT_CONTINUATION_TOKEN && { ContinuationToken: process.env.NEXT_CONTINUATION_TOKEN }),
 		});
 
+		console.log(`Continuation Token: `, process.env.NEXT_CONTINUATION_TOKEN)
+
 		const { Contents = [], IsTruncated, NextContinuationToken } = await s3Client.send(listCommand);
 
 		console.log(`Found ${Contents.length} files`);
@@ -84,7 +86,7 @@ async function generateMissingJpgFiles() {
 
 					// Convert to JPG
 					const jpgBuffer = await sharp(buffer)
-						.jpeg()
+						.jpeg({ mozjpeg: true, progressive: true, optimiseScans: true })
 						.toBuffer();
 
 					// Upload JPG version
@@ -111,6 +113,9 @@ async function generateMissingJpgFiles() {
 		if (IsTruncated) {
 			console.warn('Warning: S3 list is truncated. Some files may be missing.');
 			console.warn('NextContinuationToken:', NextContinuationToken);
+
+			const fs = require('fs');
+			fs.writeFileSync('.next_token', NextContinuationToken);
 		}
 
 	} catch (error) {

@@ -11,6 +11,12 @@ jobs:
     # Checkout the repository
     - uses: actions/checkout@v4
 
+    - name: Restore NextContinuationToken (if exists)
+      uses: actions/cache@v4
+      with:
+        path: .next_token
+        key: next-token-cache
+
     # Setup Node.js
     - name: Use Node.js
       uses: actions/setup-node@v4
@@ -21,6 +27,9 @@ jobs:
     - name: Install dependencies
       run: npm install
 
+    - name: Load NextContinuationToken into ENV (if exists)
+      run: echo "NEXT_CONTINUATION_TOKEN=$(cat .next_token 2>/dev/null || echo '')" >> $GITHUB_ENV
+
     # Run the conversion script
     - name: Run WebP to JPG conversion script
       env:
@@ -28,5 +37,11 @@ jobs:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         AWS_BUCKET_NAME: ${{ secrets.AWS_BUCKET_NAME }}
-        NEXT_CONTINUATION_TOKEN: ${{ secrets.NEXT_CONTINUATION_TOKEN }}
+        NEXT_CONTINUATION_TOKEN: ${{ env.NEXT_CONTINUATION_TOKEN }}
       run: node index.js
+
+    - name: Save Updated Token
+      uses: actions/upload-artifact@v4
+      with:
+        name: next-token
+        path: .next_token
